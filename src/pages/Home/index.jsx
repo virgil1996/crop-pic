@@ -1,8 +1,8 @@
 import React, { useRef } from 'react';
 import { Button, Space, Upload } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
-import { parseFile2Base64, randomCropImg } from './utils';
-import './style.css';
+import { parseFile2Base64, randomCropImg, showPreview } from './utils';
+import styles from './style';
 
 const CropOptions = {
   cropCount: 10,
@@ -13,12 +13,13 @@ const CropOptions = {
 }
 
 const Home = () => {
-  const originImgRef = useRef();
-  const imageListRef = useRef();
+  const originImgRef = useRef()
+  const imageListRef = useRef()
 
   const preview = () => {
-    const childrens = imageListRef.current?.children;
-    if (childrens?.length === 0) return;
+    const childrens = imageListRef.current?.children
+    if (childrens?.length === 0) return
+    showPreview(childrens)
   }
 
   return (
@@ -35,7 +36,7 @@ const Home = () => {
             [...Array(10)].forEach(() => {
               frag.appendChild(randomCropImg(img, CropOptions));
             })
-            imageListRef.current.appendChild(frag);
+            imageListRef.current.replaceChildren(frag);
           }
           return false;
         }}
@@ -43,8 +44,8 @@ const Home = () => {
       >
         <Button icon={<UploadOutlined />}>上传图片</Button>
       </Upload>
-      <img alt="" className="originImg" ref={originImgRef} />
-      <div className="list" ref={imageListRef} />
+      <img alt="" style={styles.originImg} ref={originImgRef} />
+      <div style={styles.list} ref={imageListRef} />
       <Button onClick={preview}>预览</Button>
     </Space>
   )

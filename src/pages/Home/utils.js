@@ -38,3 +38,79 @@ export const randomCropImg = (img, cropOptions) => {
   newImg.src = cvs.toDataURL();
   return newImg;
 }
+
+const previewStyle = {
+  wrapper: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
+  }
+}
+
+export const showPreview = (imgs) => {
+  let index = 0;
+  const wrapper = document.createElement('div')
+  let stack = [];
+
+  Object.keys(previewStyle.wrapper).forEach((key) => {
+    wrapper.style[key] = previewStyle.wrapper[key]
+  })
+
+  const showImg = (img) => {
+    const newImg = img.cloneNode(true);
+    newImg.style.width = '70%'
+    wrapper.replaceChildren(newImg)
+  }
+
+  const hidePreview = () => {
+    document.body.removeChild(wrapper);
+    document.removeEventListener('keydown', listenKeydownEvent)
+    exportStack()
+  }
+
+  const exportStack = () => {
+    console.log('stack', stack)
+    stack = [];
+  }
+
+  const nextPreview = (img) => {
+    index += 1;
+    if (index < imgs.length) {
+      showImg(imgs[index]);
+    } else {
+      hidePreview()
+    }
+  }
+
+  const listenKeydownEvent = (event) => {
+    const keyName = event.key
+    switch (keyName) {
+      case 'Escape':
+        stack.push({ type: 'Quit' });
+        hidePreview()
+        break
+      case '1':
+        stack.push({ type: 'True', imgIndex: index })
+        nextPreview()
+        break
+      case '2':
+        stack.push({ type: 'False', imgIndex: index })
+        nextPreview()
+        break
+      default:
+        break
+    }
+  }
+
+  document.addEventListener('keydown', listenKeydownEvent, false)
+
+  showImg(imgs[index]);
+  document.body.appendChild(wrapper)
+}
+
