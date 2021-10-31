@@ -1,5 +1,3 @@
-
-
 // 生成 min~max 的随机数
 const random = (min, max) => {
   return Math.random() * (max - min) + min;
@@ -18,40 +16,47 @@ const getRandomArea = (width, height, { minWidth, minHeight, maxWidth, maxHeight
   return [left * width, top * height, w * width, h * height];
 }
 
-export const randomCropImg2ThumbUrl = (img, cropOptions) => {
+export const randomCropImg2Url = (img, cropOptions) => {
   const cvs = document.createElement('canvas');
+  cvs.width = cvs.width * window.devicePixelRatio;
+  cvs.height = cvs.height * window.devicePixelRatio;
   const ctx = cvs.getContext('2d');
   const [left, top, width, height] = getRandomArea(img.naturalWidth, img.naturalWidth, { ...cropOptions });
-  ctx.drawImage(img, left, top, width, height, 0, 0, 500, 300);
+  ctx.drawImage(img, left, top, width, height, 0, 0, width, height);
   return cvs.toDataURL();
-  // const newImg = new Image();
-  // newImg.src = cvs.toDataURL();
-  // return newImg;
 }
 
-export const thumbStr2Image = (str) => {
+export const file2Base64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => resolve(e.target.result)
+    reader.onerror = (e) => reject(e);
+  })
+}
+
+export const base642Image = (str) => {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.src = str
-    img.onload = () =>  resolve(img)
+    img.onload = () => resolve(img)
     img.onerror = () => reject()
   })
 }
 
-// lastModified: 1635579765044
-// lastModifiedDate: Sat Oct 30 2021 15:42:45 GMT+0800 (中国标准时间) {}
-// name: "4.jpg"
-// originFileObj: File {uid: 'rc-upload-1635657573144-3', name: '4.jpg', lastModified: 1635579765044, lastModifiedDate: Sat Oct 30 2021 15:42:45 GMT+0800 (中国标准时间), webkitRelativePath: 'images/4.jpg', …}
-// percent: 0
-// size: 289024
-// thumbUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMg
-// type: "image/jpeg"
-// uid: "rc-upload-1635657573144-3"
+const spliceFileName = (file, concatName) => {
+  const splitFile = file.split('.')
+  return `${splitFile[0]}${concatName}.${splitFile[1]}`
+}
+
 export const cropImages = (files, cropOptions) => {
   return Promise.all(files.map(async (file) => {
-    const img = await thumbStr2Image(file.thumbUrl)
-    const cropImgs = Array.from({ length: cropOptions.cropCount }).map(() => {
-      return randomCropImg2ThumbUrl(img, cropOptions)
+    const img = await base642Image(file.url)
+    const cropImgs = Array.from({ length: cropOptions.cropCount }).map((_, index) => {
+      return {
+        url: randomCropImg2Url(img, cropOptions),
+        name: spliceFileName(file.name, `_${index}`)
+      }
     })
     return { ...file, cropImgs }
   }))

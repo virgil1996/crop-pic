@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Space, Upload } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { cropImages } from './utils';
+import { cropImages, file2Base64 } from './utils';
 import PreviewService from './PreviewImg';
 import AsyncButton from '../../components/AsyncButton';
 
@@ -29,8 +29,17 @@ const Home = () => {
         accept="image/*"
         multiple
         directory
-        beforeUpload={() => false}
-        onChange={({ fileList }) => setFileList(fileList)}
+        beforeUpload={async (file) => {
+          // FileReader 方法会把 file.name 给吞掉，所以要提前先存起来
+          const name = file.name;
+          const url = await file2Base64(file)
+          file = { ...file, name, url }
+          setFileList((old) => ([
+            ...old,
+            file
+          ]))
+          return false
+        }}
         fileList={fileList}
       >
         <div>

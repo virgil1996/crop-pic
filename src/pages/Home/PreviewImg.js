@@ -1,4 +1,4 @@
-import { thumbStr2Image } from './utils';
+import { base642Image } from './utils';
 
 const previewStyle = {
   wrapper: {
@@ -21,10 +21,12 @@ class PreviewService {
   constructor(imgs) {
     const stack = [];
     imgs.forEach((originImg) => {
-      originImg.cropImgs.forEach((thumbUrl) => {
+      originImg.cropImgs.forEach((crop) => {
         stack.push({
-          thumbUrl,
-          originImg: { thumbUrl: originImg.thumbUrl, name: originImg.name },
+          ...crop,
+          originUid: originImg.uid,
+          originUrl: originImg.url,
+          originName: originImg.name,
         })
       })
     })
@@ -46,7 +48,6 @@ class PreviewService {
     const keyName = event.key
     switch (keyName) {
       case 'Escape':
-        // stack.push({ type: 'Quit' });
         this._hidePreview()
         break
       case '1':
@@ -74,7 +75,7 @@ class PreviewService {
     const img = this._getCurrentImg();
     if (!img) return;
     
-    const newImg = await thumbStr2Image(img.thumbUrl);
+    const newImg = await base642Image(img.url);
     newImg.style.width = '70%'
     this._wrapper.replaceChildren(newImg)
   }
@@ -96,7 +97,17 @@ class PreviewService {
   }
 
   _exportImgs = () => {
-    console.log(this._imgs)
+    const map = {}
+    this._imgs.forEach((img) => {
+      const uid = img.originUid
+      if (!map[uid]) {
+        map[uid] = { uid, url: img.originUrl, name: img.originName, cropImgs: [img] }
+      } else {
+        map[uid].cropImgs.push(img)
+      }
+    })
+    const res = Object.keys(map).map(key => map[key]);
+    console.log('res: ', res);
   }
 }
 
