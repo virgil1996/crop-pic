@@ -1,4 +1,7 @@
-import { base642Image } from './utils';
+import JSZip from 'jszip';
+import { base642Image, removeBase64Prefix, removeFileExt } from './utils';
+import dayjs from 'dayjs';
+import FileSave from 'file-saver';
 
 const previewStyle = {
   wrapper: {
@@ -96,7 +99,7 @@ class PreviewService {
     this._exportImgs()
   }
 
-  _exportImgs = () => {
+  _exportImgs = async () => {
     const map = {}
     this._imgs.forEach((img) => {
       const uid = img.originUid
@@ -106,8 +109,32 @@ class PreviewService {
         map[uid].cropImgs.push(img)
       }
     })
-    const res = Object.keys(map).map(key => map[key]);
-    console.log('res: ', res);
+    const zip = new JSZip();
+    Object.keys(map).forEach(key => {
+      const img = map[key]
+      const fold = zip.folder(removeFileExt(img.name))
+      fold.file(img.name, removeBase64Prefix(img.url), { base64: true })
+      img.cropImgs.forEach((crop) => {
+        fold.file(crop.name, removeBase64Prefix(crop.url), { base64: true })
+      })
+      const json = {
+        originImg: img.name,
+        cropImgs: img.cropImgs.map((crop) => ({
+          name: crop.name,
+          checkType: crop.checkType,
+          checkTime: crop.checkTime ? dayjs(crop.checkTime).format('HH:mm:ss') : ''
+        }))
+      }
+      const csvList = [["name", "result", "time"]]
+      json.cropImgs.forEach((item) => {
+        csvList.push([item.name, item.checkType, item.checkTime])
+      })
+      fold.file('result.json', JSON.stringify(json))
+      const csv = csvList.map((cols) => cols.map(col => `"${col}"`).join(',')).join('\n')
+      fold.file('result.csv', csv)
+    });
+    const content = await zip.generateAsync({ type: 'blob' })
+    FileSave.saveAs(content, `${dayjs(Date.now()).format('YYYY-MM-DD HH:mm:ss')}.zip`)
   }
 }
 

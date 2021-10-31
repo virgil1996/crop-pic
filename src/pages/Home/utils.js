@@ -62,3 +62,10 @@ export const cropImages = (files, cropOptions) => {
   }))
 }
 
+export const removeBase64Prefix = (str) => {
+  return str.replace(/^data:image\/\w+;base64,/, '')
+}
+
+export const removeFileExt = (str) => {
+  return str.split('.')[0]
+}
