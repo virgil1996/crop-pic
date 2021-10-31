@@ -1,8 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import { Button, Space, Upload } from 'antd';
-import { UploadOutlined } from '@ant-design/icons';
-import { parseFile2Base64, randomCropImg, showPreview } from './utils';
-import styles from './style';
+import { PlusOutlined } from '@ant-design/icons';
+import { cropImages } from './utils';
+import PreviewService from './PreviewImg';
+import AsyncButton from '../../components/AsyncButton';
 
 const CropOptions = {
   cropCount: 10,
@@ -13,40 +14,34 @@ const CropOptions = {
 }
 
 const Home = () => {
-  const originImgRef = useRef()
-  const imageListRef = useRef()
+  const [fileList, setFileList] = useState([])
 
-  const preview = () => {
-    const childrens = imageListRef.current?.children
-    if (childrens?.length === 0) return
-    showPreview(childrens)
+  const crop = async () => {
+    if (fileList.length === 0) return;
+    const list = await cropImages(fileList, CropOptions);
+    new PreviewService(list)
   }
 
   return (
     <Space direction="vertical">
       <Upload
-        listType="picture"
+        listType="picture-card"
         accept="image/*"
-        beforeUpload={async (file) => {
-          const str = await parseFile2Base64(file);
-          const img = originImgRef.current;
-          img.src = str;
-          img.onload = () => {
-            const frag = document.createDocumentFragment();
-            [...Array(10)].forEach(() => {
-              frag.appendChild(randomCropImg(img, CropOptions));
-            })
-            imageListRef.current.replaceChildren(frag);
-          }
-          return false;
-        }}
-        showUploadList={false}
+        multiple
+        directory
+        beforeUpload={() => false}
+        onChange={({ fileList }) => setFileList(fileList)}
+        fileList={fileList}
       >
-        <Button icon={<UploadOutlined />}>上传图片</Button>
+        <div>
+          <PlusOutlined />
+          <div style={{ marginTop: 8 }}>Upload</div>
+        </div>
       </Upload>
-      <img alt="" style={styles.originImg} ref={originImgRef} />
-      <div style={styles.list} ref={imageListRef} />
-      <Button onClick={preview}>预览</Button>
+      <Space>
+        <AsyncButton disabled={fileList.length === 0} onClick={crop}>裁剪</AsyncButton>
+        <Button onClick={() => setFileList([])}>清空</Button>
+      </Space>
     </Space>
   )
 }

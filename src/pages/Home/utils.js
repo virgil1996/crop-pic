@@ -1,15 +1,4 @@
-export const parseFile2Base64 = (file) => {
-  return new Promise((resolve, reject) => {
-    try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (e) => resolve(e.target.result)
-      reader.onerror = (e) => reject(e);
-    } catch (e) {
-      reject(e);
-    }
-  })
-}
+
 
 // 生成 min~max 的随机数
 const random = (min, max) => {
@@ -21,7 +10,7 @@ const random = (min, max) => {
  * 单位: 0 ~ 1
  * return [left, top, width, height]
  */
-export const getRandomArea = (width, height, { minWidth, minHeight, maxWidth, maxHeight }) => {
+const getRandomArea = (width, height, { minWidth, minHeight, maxWidth, maxHeight }) => {
   const w = random(minWidth, maxWidth);
   const h = random(minHeight, maxHeight);
   const top = random(0, 1 - h);
@@ -29,88 +18,42 @@ export const getRandomArea = (width, height, { minWidth, minHeight, maxWidth, ma
   return [left * width, top * height, w * width, h * height];
 }
 
-export const randomCropImg = (img, cropOptions) => {
+export const randomCropImg2ThumbUrl = (img, cropOptions) => {
   const cvs = document.createElement('canvas');
   const ctx = cvs.getContext('2d');
   const [left, top, width, height] = getRandomArea(img.naturalWidth, img.naturalWidth, { ...cropOptions });
   ctx.drawImage(img, left, top, width, height, 0, 0, 500, 300);
-  const newImg = new Image();
-  newImg.src = cvs.toDataURL();
-  return newImg;
+  return cvs.toDataURL();
+  // const newImg = new Image();
+  // newImg.src = cvs.toDataURL();
+  // return newImg;
 }
 
-const previewStyle = {
-  wrapper: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center'
-  }
-}
-
-export const showPreview = (imgs) => {
-  let index = 0;
-  const wrapper = document.createElement('div')
-  let stack = [];
-
-  Object.keys(previewStyle.wrapper).forEach((key) => {
-    wrapper.style[key] = previewStyle.wrapper[key]
+export const thumbStr2Image = (str) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.src = str
+    img.onload = () =>  resolve(img)
+    img.onerror = () => reject()
   })
+}
 
-  const showImg = (img) => {
-    const newImg = img.cloneNode(true);
-    newImg.style.width = '70%'
-    wrapper.replaceChildren(newImg)
-  }
-
-  const hidePreview = () => {
-    document.body.removeChild(wrapper);
-    document.removeEventListener('keydown', listenKeydownEvent)
-    exportStack()
-  }
-
-  const exportStack = () => {
-    console.log('stack', stack)
-    stack = [];
-  }
-
-  const nextPreview = (img) => {
-    index += 1;
-    if (index < imgs.length) {
-      showImg(imgs[index]);
-    } else {
-      hidePreview()
-    }
-  }
-
-  const listenKeydownEvent = (event) => {
-    const keyName = event.key
-    switch (keyName) {
-      case 'Escape':
-        stack.push({ type: 'Quit' });
-        hidePreview()
-        break
-      case '1':
-        stack.push({ type: 'True', imgIndex: index })
-        nextPreview()
-        break
-      case '2':
-        stack.push({ type: 'False', imgIndex: index })
-        nextPreview()
-        break
-      default:
-        break
-    }
-  }
-
-  document.addEventListener('keydown', listenKeydownEvent, false)
-
-  showImg(imgs[index]);
-  document.body.appendChild(wrapper)
+// lastModified: 1635579765044
+// lastModifiedDate: Sat Oct 30 2021 15:42:45 GMT+0800 (中国标准时间) {}
+// name: "4.jpg"
+// originFileObj: File {uid: 'rc-upload-1635657573144-3', name: '4.jpg', lastModified: 1635579765044, lastModifiedDate: Sat Oct 30 2021 15:42:45 GMT+0800 (中国标准时间), webkitRelativePath: 'images/4.jpg', …}
+// percent: 0
+// size: 289024
+// thumbUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMg
+// type: "image/jpeg"
+// uid: "rc-upload-1635657573144-3"
+export const cropImages = (files, cropOptions) => {
+  return Promise.all(files.map(async (file) => {
+    const img = await thumbStr2Image(file.thumbUrl)
+    const cropImgs = Array.from({ length: cropOptions.cropCount }).map(() => {
+      return randomCropImg2ThumbUrl(img, cropOptions)
+    })
+    return { ...file, cropImgs }
+  }))
 }
 
